@@ -5,13 +5,11 @@ import { PDPPersonalization } from './PDPPersonalization';
 import { ESpots } from './ESpots';
 import { ContentVersioning } from './ContentVersioning';
 import { GenSiteStub } from './GenSiteStub';
-import { ProductSpin } from './ProductSpin';
-import { GenerateNewProduct } from './GenerateNewProduct';
 import { ImagePlus, Heart, Sparkles, Target, Tag, Globe, Video } from 'lucide-react';
 
 
 export const PDPHub: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'PERSONALIZATION' | 'ENRICHMENT' | 'ESPOTS' | 'CONTENT_VERSIONING' | 'GENSITE' | 'MULTI_IMAGE' | 'PRODUCT_SPIN' | 'NEW_PRODUCT'>('PERSONALIZATION');
+    const [activeTab, setActiveTab] = useState<'PERSONALIZATION' | 'ENRICHMENT' | 'ESPOTS' | 'CONTENT_VERSIONING' | 'GENSITE' | 'MULTI_IMAGE'>('PERSONALIZATION');
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -32,12 +30,6 @@ export const PDPHub: React.FC = () => {
                             className={`tab-button ${activeTab === 'PERSONALIZATION' ? 'active' : 'inactive'}`}
                         >
                             <Heart size={18} /> PDP Personalization
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('NEW_PRODUCT')}
-                            className={`tab-button ${activeTab === 'NEW_PRODUCT' ? 'active' : 'inactive'}`}
-                        >
-                            <Sparkles size={18} /> Gen Product
                         </button>
                         <button
                             onClick={() => setActiveTab('ESPOTS')}
@@ -63,12 +55,6 @@ export const PDPHub: React.FC = () => {
                         >
                             <Tag size={18} /> Content Versions
                         </button>
-                        <button
-                            onClick={() => setActiveTab('PRODUCT_SPIN')}
-                            className={`tab-button ${activeTab === 'PRODUCT_SPIN' ? 'active' : 'inactive'}`}
-                        >
-                            <Video size={18} /> Prod Spin
-                        </button>
 
                     </div>
                 </div>
@@ -79,12 +65,10 @@ export const PDPHub: React.FC = () => {
                 <div className="max-w-[1600px] mx-auto">
                     {activeTab === 'MULTI_IMAGE' && <MultiImage />}
                     {activeTab === 'PERSONALIZATION' && <PDPPersonalization />}
-                    {activeTab === 'NEW_PRODUCT' && <GenerateNewProduct />}
                     {activeTab === 'ESPOTS' && <ESpots />}
                     {activeTab === 'GENSITE' && <GenSiteStub />}
                     {activeTab === 'ENRICHMENT' && <PDPEnrichment />}
                     {activeTab === 'CONTENT_VERSIONING' && <ContentVersioning />}
-                    {activeTab === 'PRODUCT_SPIN' && <ProductSpin />}
 
                 </div>
             </div>

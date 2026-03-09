@@ -58,7 +58,7 @@ export const AudienceGenerator: React.FC<AudienceGeneratorProps> = ({ personas, 
     setLoadingStep("Identifying Key Member Segments...");
 
     try {
-      const explicitContext = `${context}. Strictly segment these customers into exactly these three audiences: 'The Young Family', 'The Active Senior', and 'The Wellness Seeker'. Do not create any other segments. Data: ${JSON.stringify(SAMPLE_CUSTOMER_DATA)}`;
+      const explicitContext = `${context}. Segment these customers into exactly three audiences based on the data. Data: ${JSON.stringify(SAMPLE_CUSTOMER_DATA)}`;
       const segments = await generateAudienceSegments(explicitContext);
 
       // Basic validation
@@ -71,24 +71,9 @@ export const AudienceGenerator: React.FC<AudienceGeneratorProps> = ({ personas, 
 
       setLoadingStep("Generating Synthetic Personas & Health Insights...");
 
-      // Mappings default "products" (Plans/Services)
-      const AUDIENCE_MAPPINGS: Record<string, { products: string[] }> = {
-        'The Young Family': {
-          products: ['Family PPO', 'Pediatric Dental', 'Telehealth 24/7']
-        },
-        'The Active Senior': {
-          products: ['Medicare Advantage', 'SilverSneakers', 'Prescription Drug Plan']
-        },
-        'The Wellness Seeker': {
-          products: ['HSA High Deductible', 'Mental Health Support', 'Preventive Care']
-        }
-      };
-
       for (let index = 0; index < segments.length; index++) {
         const seg = segments[index];
         try {
-          const mapping = AUDIENCE_MAPPINGS[seg.personaName] || AUDIENCE_MAPPINGS[seg.name];
-
           // Always generate image
           generateImageFromPrompt(seg.imagePrompt + " professional portrait, high quality, studio lighting, natural look")
             .then(url => {
@@ -102,13 +87,8 @@ export const AudienceGenerator: React.FC<AudienceGeneratorProps> = ({ personas, 
 
           const details = await generateSyntheticPersona(seg.personaName, seg.name, explicitContext);
           if (details) {
-            // Override products if mapping exists
-            if (mapping) {
-              const baseProducts = details.preferred_products || [];
-              // Filter out duplicates then prepend mapped products
-              const otherProducts = baseProducts.filter(p => !mapping.products.includes(p));
-              details.preferred_products = [...mapping.products, ...otherProducts].slice(0, 5);
-            }
+            // Use LLM generated products, ensure array and limit to 5
+            details.preferred_products = (details.preferred_products || []).slice(0, 5);
 
             setPersonas(prev => {
               const newP = [...prev];
