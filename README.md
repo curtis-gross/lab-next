@@ -2,6 +2,8 @@
 
 This is a comprehensive full-stack AI lab application built with React, Node.js, and Google Cloud Vertex AI. Follow the guide below to set up your environment and run the application locally or deploy it to Google Cloud Run.
 
+Note - when first using the application be sure to run marketing brief, audience generator and then the synthetif focus groups use that data for their answers.
+
 ## Prerequisites
 
 Before starting, ensure you have the following installed on your machine (Mac or Windows):
