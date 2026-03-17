@@ -1,0 +1,27 @@
+{
+  "messages": [
+    {
+      "text": "Hello! I am your Healthco Health Assistant. How can I help you with your health plan today?",
+      "sender": "bot",
+      "html": "\n                <div class=\"bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200\">\n                    <p class=\"mb-3 text-gray-900\">Hello! I am your Healthco Health Assistant. How can I help you with your health plan today?</p>\n                    <div class=\"grid grid-cols-2 gap-2 mt-2\">\n                        <button \n                            data-action=\"suggested-prompt\" \n                            data-prompt=\"Help me find a doctor or specialist in my network.\"\n                            class=\"text-left text-xs bg-white hover:bg-gray-100 text-gray-700 p-2 rounded transition-colors flex items-center gap-2 border border-gray-200\"\n                        >\n                            <span class=\"text-lg\">👨‍⚕️</span> Find a Provider\n                        </button>\n                        <button \n                            data-action=\"suggested-prompt\"\n                            data-prompt=\"What benefits are included in my current plan?\"\n                            class=\"text-left text-xs bg-white hover:bg-gray-100 text-gray-700 p-2 rounded transition-colors flex items-center gap-2 border border-gray-200\"\n                        >\n                            <span class=\"text-lg\">📋</span> Plan Benefits\n                        </button>\n                    </div>\n                </div>\n            "
+    },
+    {
+      "text": "hello",
+      "sender": "user"
+    },
+    {
+      "text": "Response generated",
+      "sender": "bot",
+      "html": "\n                <div>\n                    <div class=\"p-4 text-gray-800\"><h2 class=\"text-xl font-bold mb-2\">Hello!</h2><p>I am your Healthco Health Assistant. How can I help you navigate your health plan, benefits, or claims today?</p></div>\n                    \n                </div>\n            "
+    },
+    {
+      "text": "I am looking into a back surgery",
+      "sender": "user"
+    },
+    {
+      "text": "Response generated",
+      "sender": "bot",
+      "html": "\n                <div>\n                    <div class='space-y-4'><p>Planning for back surgery can be a complex process. Here are some important steps and questions to consider when navigating your health plan:</p><h3 class='font-bold text-lg'>Key Steps to Consider</h3><ul class='list-disc pl-5 space-y-2'><li><strong>Verify Coverage:</strong> Contact your insurance provider to confirm that the specific surgical procedure is covered under your plan.</li><li><strong>Understand Pre-authorization:</strong> Many insurers require pre-authorization (or pre-approval) before they will cover spine surgery. Ensure your surgeon's office is managing this process.</li><li><strong>Check Network Status:</strong> Verify that your surgeon, the surgical facility, and the anesthesiologist are all 'in-network' to minimize out-of-pocket costs.</li><li><strong>Review Medical Necessity:</strong> Most insurance plans require proof of medical necessity, such as imaging (MRI/CT scans) and a record of failed conservative treatments (e.g., physical therapy, injections, or medication).</li></ul><h3 class='font-bold text-lg'>Questions to Ask Your Insurance Provider</h3><ul class='list-disc pl-5 space-y-2'><li>\"Is this specific surgery a covered benefit under my current plan?\"</li><li>\"Does this procedure require pre-authorization or pre-certification?\"</li><li>\"What are my estimated out-of-pocket costs, including my deductible, co-pays, and co-insurance?\"</li><li>\"Are there any specific facilities or providers I must use to ensure the highest level of coverage?\"</li><li>\"What is the process for appealing a denial if the request for surgery is not initially approved?\"</li></ul><p class='text-sm italic'>Note: Please consult with your primary care physician or a spine specialist to discuss your medical needs. Always review your official Summary of Benefits and Coverage (SBC) for the most accurate information regarding your specific plan.</p></div>\n                    \n                </div>\n            "
+    }
+  ]
+}

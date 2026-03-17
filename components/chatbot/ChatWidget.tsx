@@ -42,13 +42,9 @@ type DebugLog = {
 };
 
 export default function ChatWidget({ customerContextData }: { customerContextData?: any }) {
-  const [apiKey, setApiKey] = useState(() => {
-    return localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
-  });
+  const [apiKey, setApiKey] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(() => {
-    return localStorage.getItem('anthem_chat_expanded') === 'true';
-  });
+  const [isExpanded, setIsExpanded] = useState(false);
   const [status, setStatus] = useState('Idle');
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
@@ -56,57 +52,42 @@ export default function ChatWidget({ customerContextData }: { customerContextDat
   const [isVideoActive, setIsVideoActive] = useState(false);
 
   // Persisted Chat State
-  const [messages, setMessages] = useState<{ role: string, text: string }[]>(() => {
-    const saved = localStorage.getItem('anthem_chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [messages, setMessages] = useState<{ role: string, text: string }[]>([]);
 
   // Workflow State
-  const [activeWorkflow, setActiveWorkflow] = useState<WorkflowType>(() => {
-    const saved = localStorage.getItem('anthem_chat_workflow');
-    return saved ? (saved as WorkflowType) : null;
-  });
-  const [workflowStep, setWorkflowStep] = useState(() => {
-    const saved = localStorage.getItem('anthem_chat_workflow_step');
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  const [activeWorkflow, setActiveWorkflow] = useState<WorkflowType>(null);
+  const [workflowStep, setWorkflowStep] = useState(0);
 
   // Debug State
   const [showDebug, setShowDebug] = useState(false);
-  const [debugLogs, setDebugLogs] = useState<DebugLog[]>(() => {
-    const saved = localStorage.getItem('anthem_chat_debug_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
 
   const clientRef = useRef<GeminiLiveClient | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Persistence Effects
+  // Persistence Fetch
   useEffect(() => {
-    localStorage.setItem('gemini_api_key', apiKey);
-  }, [apiKey]);
+    const loadSavedState = async () => {
+      try {
+        const res = await fetch('/api/load-run/chat_widget');
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            if (data.apiKey) setApiKey(data.apiKey);
+            if (data.isExpanded !== undefined) setIsExpanded(data.isExpanded);
+            if (data.messages) setMessages(data.messages);
+            if (data.activeWorkflow) setActiveWorkflow(data.activeWorkflow);
+            if (data.workflowStep !== undefined) setWorkflowStep(data.workflowStep);
+            if (data.debugLogs) setDebugLogs(data.debugLogs);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load chat widget state", e);
+      }
+    };
 
-  useEffect(() => {
-    localStorage.setItem('anthem_chat_expanded', String(isExpanded));
-  }, [isExpanded]);
+    loadSavedState();
 
-  useEffect(() => {
-    localStorage.setItem('anthem_chat_messages', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem('anthem_chat_workflow', activeWorkflow || '');
-  }, [activeWorkflow]);
-
-  useEffect(() => {
-    localStorage.setItem('anthem_chat_workflow_step', String(workflowStep));
-  }, [workflowStep]);
-
-  useEffect(() => {
-    localStorage.setItem('anthem_chat_debug_logs', JSON.stringify(debugLogs));
-  }, [debugLogs]);
-
-  useEffect(() => {
     fetch('/api/key')
       .then(res => res.json())
       .then(data => {
@@ -115,6 +96,52 @@ export default function ChatWidget({ customerContextData }: { customerContextDat
       .catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Save State Function
+  const saveState = (updates: any) => {
+    const currentState = {
+      apiKey,
+      isExpanded,
+      messages,
+      activeWorkflow,
+      workflowStep,
+      debugLogs,
+      ...updates
+    };
+
+    fetch('/api/save-run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featureId: 'chat_widget',
+        data: currentState
+      })
+    }).catch(err => console.error("Failed to save chat widget state:", err));
+  };
+
+  useEffect(() => {
+    if (apiKey) saveState({ apiKey });
+  }, [apiKey]);
+
+  useEffect(() => {
+    saveState({ isExpanded });
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (messages.length > 0) saveState({ messages });
+  }, [messages]);
+
+  useEffect(() => {
+    saveState({ activeWorkflow });
+  }, [activeWorkflow]);
+
+  useEffect(() => {
+    saveState({ workflowStep });
+  }, [workflowStep]);
+
+  useEffect(() => {
+    if (debugLogs.length > 0) saveState({ debugLogs });
+  }, [debugLogs]);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -239,14 +266,14 @@ export default function ChatWidget({ customerContextData }: { customerContextDat
   };
 
   const clearSession = () => {
-    setActiveWorkflow(null);
-    setWorkflowStep(0);
     setMessages([]);
     setDebugLogs([]);
-    localStorage.removeItem('anthem_chat_messages');
-    localStorage.removeItem('anthem_chat_workflow');
-    localStorage.removeItem('anthem_chat_workflow_step');
-    localStorage.removeItem('anthem_chat_debug_logs');
+    saveState({
+      messages: [],
+      activeWorkflow: null,
+      workflowStep: 0,
+      debugLogs: []
+    });
     addDebugLog('System', 'Session cleared');
   };
 

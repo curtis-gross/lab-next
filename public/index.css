@@ -433,3 +433,40 @@
   object-position: top;
   display: block;
 }
+
+/*=================================
+  Assistant & Chat Interactions
+=================================*/
+.lookup-trigger {
+  cursor: pointer;
+  color: #0077C8; /* Healthco Blue */
+  text-decoration: underline;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.lookup-trigger:hover {
+  color: #005a9e;
+  background-color: #F0F9FF;
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.assistant-btn {
+  text-align: left;
+  font-size: 0.75rem;
+  background-color: #FFFFFF;
+  color: #374151; /* gray-700 */
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #E5E7EB;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assistant-btn:hover {
+  background-color: #F9FAFB;
+  border-color: #0077C8;
+}

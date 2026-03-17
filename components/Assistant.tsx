@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { brandConfig } from '../config';
 import { generateAssistantResponse } from '../services/assistantService';
-import { Send, Image as ImageIcon, Loader2, Sparkles, FileText, Activity } from 'lucide-react';
+import { Send, Image as ImageIcon, Loader2, Sparkles, FileText, Activity, RotateCcw } from 'lucide-react';
 
 interface Message {
   text: string;
@@ -53,7 +53,39 @@ export const Assistant = () => {
 
   useEffect(() => {
     scrollToBottom();
+    // Auto-save messages when they change (only if not empty)
+    if (messages.length > 1) {
+      saveSession(messages);
+    }
   }, [messages, loading]);
+
+  const saveSession = (msgs: Message[]) => {
+    fetch('/api/save-run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featureId: 'assistant_chat',
+        data: { messages: msgs }
+      })
+    }).catch(err => console.error("Failed to save assistant session:", err));
+  };
+
+  const handleLoadLast = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/load-run/assistant_chat');
+      if (!res.ok) throw new Error("No saved session found");
+      const data = await res.json();
+      if (data && data.messages) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.warn(error);
+      alert("No previous session found.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Event Delegation for clickable suggestions
   useEffect(() => {
@@ -62,10 +94,11 @@ export const Assistant = () => {
 
     const handleClick = (e: Event) => {
       const target = e.target as HTMLElement;
-      const button = target.closest('button[data-action="suggested-prompt"]');
+      // Expand to any element with data-action (like lookup spans or buttons)
+      const trigger = target.closest('[data-action="suggested-prompt"]');
 
-      if (button && button instanceof HTMLElement && !loading) {
-        const prompt = button.getAttribute('data-prompt');
+      if (trigger && trigger instanceof HTMLElement && !loading) {
+        const prompt = trigger.getAttribute('data-prompt');
         if (prompt) {
           processMessage(prompt, []);
         }
@@ -150,12 +183,18 @@ export const Assistant = () => {
           </div>
           <div>
             <h2 className="section-header leading-tight text-gray-900">{brandConfig.companyName} Assistant</h2>
-            <div className="flex items-center gap-2 text-xs opacity-90">
+            <div className="flex items-center gap-2 text-xs opacity-90 text-gray-400">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               Online • Member Support
             </div>
           </div>
         </div>
+        <button
+          onClick={handleLoadLast}
+          className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 font-bold border border-gray-200"
+        >
+          <RotateCcw size={14} /> Load Last
+        </button>
       </div>
 
       {/* Chat Area */}
@@ -245,6 +284,7 @@ export const Assistant = () => {
             onClick={() => fileInputRef.current?.click()}
             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
             title="Upload Image"
+            aria-label="Upload Image"
           >
             <ImageIcon size={20} />
           </button>
@@ -274,6 +314,7 @@ export const Assistant = () => {
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             style={input.trim() || images.length > 0 ? { backgroundColor: brandConfig.colors.primary } : {}}
+            aria-label="Send Message"
           >
             <Send size={18} />
           </button>

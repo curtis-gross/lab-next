@@ -32,6 +32,13 @@ export const generateAssistantResponse = async (
             **Rules:**
             - **Grounding**: ALWAYS use Google Search when asked for current market trends, news, or specific factual data.
             - **Visuals**: Use HTML to format your response. Use Tailwind CSS classes for styling. Use brand colors: Primary: ${brandConfig.colors.primary}, Secondary: ${brandConfig.colors.secondary}.
+            
+            **Interactivity (CRITICAL):**
+            - To create a button that the user can click to send a message to the chat, use:
+              \`<button data-action="suggested-prompt" data-prompt="[USER_MESSAGE_TO_SEND]" class="assistant-btn">...</button>\`
+            - To create a clickable "lookup" or highlighted term that sends a follow-up question to the chat, use:
+              \`<span data-action="suggested-prompt" data-prompt="Tell me more about [TERM]" class="lookup-trigger">...</span>\`
+            - ALWAYS use these attributes for suggested follow-up questions or data deep-dives.
         `;
 
         const responseSchema = {
@@ -100,7 +107,7 @@ export const generateAssistantResponse = async (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-3.1-flash-lite-preview',
                 contents,
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 config: {
