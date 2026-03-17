@@ -12,8 +12,6 @@ export const generateAssistantResponse = async (
 ): Promise<AssistantResponse> => {
     try {
 
-        const historyContext = history.map(msg => `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`).join('\n');
-
         const systemPrompt = `
             You are an expert Healthco Health Assistant.
             Your role is to help customers find the perfect health plans and services for their specific lifestyles. Provide tailored, easy-to-understand insurance advice.
@@ -23,80 +21,91 @@ export const generateAssistantResponse = async (
             - Provide clear, actionable advice.
             - If you use search tools, synthesize the information naturally into your response.
 
+            **PRIORITY:**
+            Your absolute priority is to assess, acknowledge, and respond directly to the USER'S LATEST MESSAGE provided at the end of the conversation history. Do not get sidetracked by previous context if the user has provided new specific instructions.
+
             **Core Capabilities:**
             1. **Plan Recommendations**: Suggest specific Healthco health plans, services, and benefits based on the user's goals.
             2. **Data Lookup**: Use Google Search to retrieve REAL-TIME data from Healthco's public databases (simulated) and EXTERNAL sources (health trends, regulatory news, competitor analysis).
-            3. **Report Generation**: Create structured HTML reports with "findings", "risks", and "recommendations".
+            3. **Report Generation**: Create structured reports with "findings", "risks", and "recommendations".
 
             **Rules:**
-            - **Tone**: Professional, analytical, forward-thinking, and compliant.
             - **Grounding**: ALWAYS use Google Search when asked for current market trends, news, or specific factual data.
-            - **References**: If you use external sources, you MUST include them in a "references" array.
-            - **Output**: You MUST return a JSON object with a specific "type" and content.
             - **Visuals**: Use HTML to format your response. Use Tailwind CSS classes for styling. Use brand colors: Primary: ${brandConfig.colors.primary}, Secondary: ${brandConfig.colors.secondary}.
-            
-            **Response Types:**
-
-            **Type A: General Chat / Question**
-            {
-                "type": "chat",
-                "html": "<p class='text-gray-800'>Your answer here...</p>",
-                "references": [
-                    { "text": "Source Name", "url": "https://..." }
-                ]
-            }
-
-            **Type B: Feasibility Report request**
-            If the user asks to "analyze", "evaluate", or "assess" a project/idea:
-            {
-                "type": "report",
-                "title": "Feasibility Assessment: [Project Name]",
-                "score": 85, // 0-100
-                "summary": "Brief executive summary...",
-                "sections": [
-                    { "title": "Regulatory", "content": "..." },
-                    { "title": "Market Viability (Real-time)", "content": "..." },
-                    { "title": "Technical Feasibility", "content": "..." }
-                ],
-                "recommendation": "Produce / Kill / Pivot",
-                "references": [
-                    { "text": "FDA Guidance", "url": "https://..." }
-                ]
-            }
-
-            **Type C: Data Retrieval**
-            If the user asks for "data", "stats", "numbers":
-            {
-                "type": "data",
-                "title": "Data Query Results",
-                "items": [
-                    { "label": "Metric 1", "value": "Value 1" },
-                    { "label": "Metric 2", "value": "Value 2" }
-                ],
-                "references": [ ... ]
-            }
-
-            **Output Format:**
-            Return ONLY valid JSON.
         `;
 
-        const parts: any[] = [{ text: systemPrompt }];
+        const responseSchema = {
+            type: "object",
+            properties: {
+                type: { type: "string", enum: ["chat", "report", "data"] },
+                html: { type: "string", description: "HTML content for the response. Use Tailwind CSS for styling." },
+                title: { type: "string", description: "Title for the report or data table" },
+                summary: { type: "string", description: "Executive summary for the report" },
+                score: { type: "number", description: "Feasibility score (0-100)" },
+                sections: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            title: { type: "string" },
+                            content: { type: "string" }
+                        },
+                        required: ["title", "content"]
+                    }
+                },
+                recommendation: { type: "string", description: "Produce / Kill / Pivot" },
+                items: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            label: { type: "string" },
+                            value: { type: "string" }
+                        },
+                        required: ["label", "value"]
+                    }
+                },
+                references: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            text: { type: "string" },
+                            url: { type: "string" }
+                        },
+                        required: ["text", "url"]
+                    }
+                }
+            },
+            required: ["type"]
+        };
 
+        // Structure contents with role-based messages
+        const contents = history.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
+
+        // Add current prompt to contents
+        const currentParts: any[] = [{ text: prompt }];
         if (images && images.length > 0) {
             images.forEach(img => {
                 const cleanBase64 = img.split(',')[1] || img;
-                parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } });
+                currentParts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } });
             });
         }
+        contents.push({ role: 'user', parts: currentParts });
 
         const genaiResponse = await fetch('/api/genai/generateContent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'gemini-3-flash-preview',
-                contents: { parts },
+                contents,
+                systemInstruction: { parts: [{ text: systemPrompt }] },
                 config: {
                     responseMimeType: "application/json",
+                    responseSchema: responseSchema,
                     tools: [{ googleSearch: {} }]
                 }
             })
@@ -107,10 +116,19 @@ export const generateAssistantResponse = async (
         }
         
         const response = await genaiResponse.json();
-
         const text = extractTextFromResponse(response) || "{}";
+        
+        console.log("Assistant Raw Response:", text);
+
         const cleanText = text.replace(/```json|```/g, '').trim();
-        const data = JSON.parse(cleanText);
+        let data: any;
+        try {
+            data = JSON.parse(cleanText);
+            console.log("Assistant Parsed Data:", data);
+        } catch (e) {
+            console.error("Failed to parse Assistant JSON:", e);
+            throw new Error("Invalid JSON response from Assistant");
+        }
 
         // Convert JSON response to HTML for the UI
         let htmlContent = "";
@@ -132,7 +150,13 @@ export const generateAssistantResponse = async (
             `;
         };
 
-
+        // Default to 'chat' if type is missing but html/content exists
+        if (!data.type) {
+            if (data.html || data.content || data.answer || data.text) {
+                data.type = 'chat';
+                data.html = data.html || data.content || data.answer || data.text;
+            }
+        }
 
         if (data.type === 'chat') {
             htmlContent = `
@@ -186,8 +210,14 @@ export const generateAssistantResponse = async (
                 </div>
             `;
         } else {
-            // Fallback
-            htmlContent = `<p>I generated a response but the format was unexpected.</p>`;
+            // Final fallback: just show the data as a stringified object if it's not empty
+            console.warn("Unknown response format from Assistant:", data);
+            htmlContent = `
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 italic text-sm text-gray-600">
+                    <p class="mb-2">I provided a response in a new format:</p>
+                    ${data.html || JSON.stringify(data)}
+                </div>
+            `;
         }
 
         return { html: htmlContent };

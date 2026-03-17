@@ -48,7 +48,7 @@ app.get('/api/key', (req, res) => {
 
 app.post('/api/genai/generateContent', checkAi, async (req, res) => {
     try {
-        let { model, contents, config } = req.body;
+        let { model, contents, config, systemInstruction } = req.body;
         
         console.log(`\n--- [Backend Proxy] /api/genai/generateContent ---`);
         console.log(`Model: ${model}`);
@@ -73,7 +73,7 @@ app.post('/api/genai/generateContent', checkAi, async (req, res) => {
             });
         }
         
-        const response = await ai.models.generateContent({ model, contents, config });
+        const response = await ai.models.generateContent({ model, contents, config, systemInstruction });
         res.json(response);
     } catch (e) {
         console.error("generateContent error:", e);
